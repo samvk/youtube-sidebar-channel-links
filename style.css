@@ -1,0 +1,3 @@
+ytd-watch-flexy yt-lockup-view-model .ytContentMetadataViewModelMetadataRow:first-child .ytContentMetadataViewModelMetadataText:hover {
+    color: var(--yt-spec-text-primary);
+}
