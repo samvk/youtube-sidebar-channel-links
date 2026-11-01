@@ -40,7 +40,7 @@ const syncCard = async (card, channelNameSelector) => {
     // matching on the name skips movies etc. (e.g. "Animation 2007") and the non-uploader collab channels
     for (const channelName of card.querySelectorAll(channelNameSelector)) {
         const link = channelName.querySelector(`.${linkClass}`);
-        if (!url || channelName.textContent.trim() !== data.author_name) {
+        if (!url || channelName.textContent.trim() !== data.author_name.trim()) {
             link && unwrap(link);
         } else if (!link) {
             const newLink = document.createElement('a');
