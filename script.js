@@ -1,10 +1,13 @@
-const channelNameSelector = '.ytContentMetadataViewModelMetadataRow:first-child .ytContentMetadataViewModelMetadataText';
+const channelNameSelectors = {
+    'ytd-watch-flexy yt-lockup-view-model': '.ytContentMetadataViewModelMetadataRow:first-child .ytContentMetadataViewModelMetadataText',
+    '.ytp-modern-videowall-still': '.ytp-modern-videowall-still-info-author',
+};
 const linkClass = 'sidebar-channel-link';
 const channelData = new Map();
 
-const getVideoId = lockup => {
-    const href = lockup.querySelector('a[href^="/watch"]')?.getAttribute('href');
-    return href ? new URL(href, location.origin).searchParams.get('v') : null;
+const getVideoId = card => {
+    const link = card.matches('a') ? card : card.querySelector('a[href^="/watch"]');
+    return link ? new URL(link.href).searchParams.get('v') : null;
 };
 
 // the page never has the channel URL - only the (hidden) avatar button knows it - so ask oEmbed by video id
@@ -19,23 +22,23 @@ const getChannelData = videoId => {
 
 const unwrap = link => link.replaceWith(...link.childNodes);
 
-const syncLockup = async lockup => {
-    const videoId = getVideoId(lockup) ?? '';
+const syncCard = async (card, channelNameSelector) => {
+    const videoId = getVideoId(card) ?? '';
     // YouTube reuses these elements for other videos
-    if (lockup.dataset.channelLinkVideoId !== videoId) {
-        lockup.dataset.channelLinkVideoId = videoId;
-        lockup.querySelectorAll(`.${linkClass}`).forEach(unwrap);
+    if (card.dataset.channelLinkVideoId !== videoId) {
+        card.dataset.channelLinkVideoId = videoId;
+        card.querySelectorAll(`.${linkClass}`).forEach(unwrap);
     }
     if (!videoId) {
         return;
     }
     const data = await getChannelData(videoId);
-    if (lockup.dataset.channelLinkVideoId !== videoId) {
+    if (card.dataset.channelLinkVideoId !== videoId) {
         return;
     }
     const url = data?.author_url && new URL(data.author_url).pathname;
     // matching on the name skips movies etc. (e.g. "Animation 2007") and the non-uploader collab channels
-    for (const channelName of lockup.querySelectorAll(channelNameSelector)) {
+    for (const channelName of card.querySelectorAll(channelNameSelector)) {
         const link = channelName.querySelector(`.${linkClass}`);
         if (!url || channelName.textContent.trim() !== data.author_name) {
             link && unwrap(link);
@@ -59,7 +62,9 @@ new MutationObserver(() => {
     syncScheduled = true;
     requestAnimationFrame(() => {
         syncScheduled = false;
-        document.querySelectorAll('ytd-watch-flexy yt-lockup-view-model').forEach(syncLockup);
+        for (const [cardSelector, channelNameSelector] of Object.entries(channelNameSelectors)) {
+            document.querySelectorAll(cardSelector).forEach(card => syncCard(card, channelNameSelector));
+        }
     });
 }).observe(document, {
     childList: true,
@@ -79,7 +84,7 @@ window.addEventListener('click', event => {
     if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
         return;
     }
-    const avatar = link.closest('yt-lockup-view-model').querySelector('.ytLockupMetadataViewModelAvatar yt-decorated-avatar-view-model [role="button"]');
+    const avatar = link.closest('yt-lockup-view-model')?.querySelector('.ytLockupMetadataViewModelAvatar yt-decorated-avatar-view-model [role="button"]');
     if (avatar) {
         event.preventDefault();
         avatar.click();

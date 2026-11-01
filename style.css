@@ -6,3 +6,7 @@
 .sidebar-channel-link:hover {
     color: var(--yt-spec-text-primary);
 }
+
+.ytp-modern-videowall-still .sidebar-channel-link {
+    pointer-events: auto;
+}
